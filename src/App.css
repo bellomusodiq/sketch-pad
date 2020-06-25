@@ -1,38 +1,94 @@
-.App {
-  text-align: center;
+.SketchPad {
+  display: flex;
+  box-sizing: border-box;
 }
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+a {
+  color: darkcyan;
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.ToolBar {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  background-color: #e0e0e0;
+  color: #212121;
+  /* box-shadow: 2px 0 3px lightgray; */
+}
+.ToolBar > i {
+  font-size: 2em;
+  margin: 5px 0;
+  cursor: pointer;
+  width: 80%;
+  padding: 5px 2.5px;
+  text-align: center;
+}
+canvas {
+  /* width: calc(100vw - 65px);
+  height: calc(100vh - 60px); */
+  box-sizing: border-box;
+  cursor: crosshair;
+  background-color: #ffffff;
+}
+.Header {
+  box-shadow: 3px 3px 4px lightgray;
+  height: 60px;
+  box-sizing: border-box;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  background-color: #212121;
+  color: #f1f1f1;
 }
 
-.App-link {
-  color: #61dafb;
+/* SideNavCard */
+.SideNavCard {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  top: 60px;
+  left: 65px;
+  background-color: #e0e0e0;
+  width: 275px;
+  height: calc(100vh - 60px);
+  padding: 5px;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.ColorSelector {
+  width: 100px;
+}
+.HexInput {
+  width: 90%;
+  padding: 5px;
+  border-radius: 5px;
+  border: none;
+}
+.ColorBoxes {
+  display: grid;
+  grid-template-columns: auto auto auto auto auto auto;
+  flex-wrap: nowrap;
+  padding-right: 5px;
+  box-sizing: border-box;
+}
+.ColorBoxes > div {
+  height: 50px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.ColorBoxes > div:hover {
+  border: .5px solid black;
+  box-sizing: border-box;
+}
+.EraserSizes, .BrushSizes {
+  display: flex;
+  flex-wrap: wrap;
+}
+.EraserSize, .BrushSize {
+  display: flex;
+  flex-direction: column;
+  margin-right: 5px;
+  align-items: center;
+  cursor: pointer;
+  padding: 2.5px;
+}
+.BrushSize:hover {
+  border: 1px solid black;
 }
