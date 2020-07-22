@@ -1,5 +1,6 @@
 import React from 'react';
 import SideNavCard from './SideNavCard';
+import { throttle } from 'lodash';
 
 
 class Canvas extends React.Component {
@@ -25,74 +26,111 @@ class Canvas extends React.Component {
                 '#FF007F', '#A52A2A'
             ]
         }
+        this.handleThrottle = throttle(e => this.mouseMove(e), 15);
+        // this.handleStrokeThrottle = throttle(this.stroke, 10);
+
+        // drawing params
+        this.eventList = ['draw', 'erase', 'line', 'color',]
+        this.event = 'draw'
+        this.currentStroke = []
+        this.historyPosition = -1;
+        this.historyStrokes = []
+        this.draw = false;
+    }
+    changeEvent = e => {
+        console.log(e)
+        this.event = e;
     }
     componentDidMount() {
         const canvas = this.canvas.current;
         const ctx = canvas.getContext("2d");
-        this.setState({ ctx: ctx })
+        // this.setState({ ctx: ctx });
+        this.ctx = ctx;
     }
-    drawStart = e => {
-        if (this.state.draw) {
+    mouseMove = e => {
+        this.event === "draw" && this.drawStart(e);
+        this.event === "erase" && this.drawStart(e, true);
+    }
+    drawStart = (e, erase = false) => {
+        if (this.draw) {
             if (e.touches && e.touches[0]) {
-                this.stroke(this.state.ctx, e.touches[0].clientX - 65, e.touches[0].clientY - 60);
+                this.stroke(this.ctx, e.touches[0].clientX - 65, e.touches[0].clientY - 60, erase);
             } else {
-                this.stroke(this.state.ctx, e.clientX - 65, e.clientY - 60)
+                this.stroke(this.ctx, e.clientX - 65, e.clientY - 60, erase)
             }
         }
     }
-    stroke = (ctx, x, y) => {
+    stroke = (ctx, x, y, erase) => {
         if (x && y) {
-            ctx.strokeStyle = "black";
+            // ctx.strokeStyle = "black";
 
-            const { currentStroke } = this.state;
-            currentStroke.push([x, y, this.state.lineWidth, this.state.lineColor])
-            this.setState({ currentStroke: currentStroke, historyPosition: this.state.historyPosition++ });
             ctx.lineTo(x, y);
             ctx.strokeStyle = this.state.lineColor;
+            if (erase) {
+                ctx.strokeStyle = 'white';
+            }
             ctx.stroke();
+            const currentStroke = this.currentStroke;
+            currentStroke.push([x, y, this.state.lineWidth, this.state.lineColor]);
+            this.currentStroke = currentStroke;
         }
     }
-    mouseDown = e => {
-        const currentStroke = this.state.currentStroke;
-        this.state.ctx.beginPath();
-        this.state.ctx.lineWidth = this.state.lineWidth;
-        this.state.ctx.strokeStyle = this.state.lineColor;
-        this.state.ctx.beginPath();
+    mouseDownDraw = e => {
+        const currentStroke = this.currentStroke;
+        // this.ctx.beginPath();
+        this.ctx.lineWidth = this.state.lineWidth;
+        this.ctx.strokeStyle = this.state.lineColor;
+        // this.ctx.beginPath();
         if (e.touches && e.touches[0]) {
-            this.state.ctx.moveTo(e.touches[0].clientX - 65, e.touches[0].clientY - 60);
-            this.state.ctx.lineTo(e.touches[0].clientX - 65, e.touches[0].clientY - 60)
+            this.ctx.moveTo(e.touches[0].clientX - 65, e.touches[0].clientY - 60);
+            this.ctx.lineTo(e.touches[0].clientX - 65, e.touches[0].clientY - 60)
             currentStroke.push([e.touches[0].clientX - 65, e.touches[0].clientY - 60, this.state.lineWidth, this.state.lineColor]);
         } else {
-            this.state.ctx.moveTo(e.clientX - 65, e.clientY - 60);
-            this.state.ctx.lineTo(e.clientX - 65, e.clientY - 60)
+            this.ctx.moveTo(e.clientX - 65, e.clientY - 60);
+            this.ctx.lineTo(e.clientX - 65, e.clientY - 60)
             currentStroke.push([e.clientX - 65, e.clientY - 60, this.state.lineWidth, this.state.lineColor]);
         }
-        this.setState({ draw: true, currentStroke: currentStroke, historyPosition: this.state.historyPosition + 1 });
+        this.currentStroke = currentStroke;
+        this.draw = true;
+    }
+    mouseDown = e => {
+        console.log(this.event);
+        this.event === 'draw' && this.mouseDownDraw(e);
+        this.event === 'erase' && this.mouseDownDraw(e);
     }
     dropEnd = (e) => {
-        let { historyStrokes, historyPosition } = this.state;
+        this.event === 'draw' && this.dropEndDraw(e);
+        this.event === 'erase' && this.dropEndDraw(e);
+    }
+    dropEndDraw = e => {
+        this.historyPosition++;
+        let historyStrokes = this.historyStrokes;
+        let historyPosition = this.historyPosition;
         historyStrokes = historyStrokes.slice(0, historyPosition);
-        historyStrokes.push(this.state.currentStroke);
-        this.setState({ draw: false, historyStrokes, currentStroke: [] })
+        historyStrokes.push(this.currentStroke);
+        this.historyStrokes = historyStrokes;
+        this.currentStroke = [];
+        this.draw = false;
 
-        let ctx = this.state.ctx;
-        var imgData = ctx.getImageData(0, 0, this.canvas.current.width, this.canvas.current.height);
-        var data = imgData.data;
-        for (var i = 0; i < data.length; i += 4) {
-            if (data[i + 3] < 255) {
-                data[i] = 255;
-                data[i + 1] = 255;
-                data[i + 2] = 255;
-                data[i + 3] = 255;
-            }
-        }
-        ctx.putImageData(imgData, 0, 0);
-        this.setState({ ctx })
+        // var imgData = this.ctx.getImageData(0, 0, this.canvas.current.width, this.canvas.current.height);
+        // var data = imgData.data;
+        // for (var i = 0; i < data.length; i += 4) {
+        //     if (data[i + 3] < 255) {
+        //         data[i] = 255;
+        //         data[i + 1] = 255;
+        //         data[i + 2] = 255;
+        //         data[i + 3] = 255;
+        //     }
+        // }
+        // this.ctx.putImageData(imgData, 0, 0);
     }
     componentDidUpdate(prevProps, prevState) {
+        console.log('updated')
     }
     undoCanvas = () => {
-        let { historyStrokes, ctx, historyPosition } = this.state;
+        let historyStrokes = this.historyStrokes;
+        let ctx = this.ctx;
+        let historyPosition = this.historyPosition;
         if (historyPosition > -1) {
             const canvas = this.canvas.current;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -106,11 +144,24 @@ class Canvas extends React.Component {
                 ctx.strokeStyle = historyStrokes[i][0][3];
                 ctx.stroke();
             }
-            this.setState({ historyPosition: this.state.historyPosition - 1 })
+            this.historyPosition--;
         }
     }
+    throttle = (callback, delay) => {
+        var previousCall = new Date().getTime();
+        return function () {
+            var time = new Date().getTime();
+
+            if ((time - previousCall) >= delay) {
+                previousCall = time;
+                callback.apply(null, arguments);
+            }
+        };
+    }
     redoCanvas = () => {
-        let { historyStrokes, historyPosition, ctx } = this.state;
+        let historyStrokes = this.historyStrokes;
+        let historyPosition = this.historyPosition;
+        let ctx = this.ctx;
         ctx.beginPath();
         if (historyStrokes[historyPosition + 1]) {
             ctx.moveTo(historyStrokes[historyPosition + 1][0], historyStrokes[historyPosition + 1][1])
@@ -121,15 +172,24 @@ class Canvas extends React.Component {
                 ctx.lineTo(historyStrokes[historyPosition + 1][j][0], historyStrokes[historyPosition + 1][j][1]);
             }
             ctx.stroke();
-            this.setState({ historyPosition: this.state.historyPosition + 1 })
+            this.historyPosition++;
+            // this.setState({ historyPosition: this.state.historyPosition + 1 })
         }
     }
-    toggleSideNav = val => {
+    toggleSideNav = (val, changeEvent = true) => {
+        if (changeEvent) {
+            this.changeEvent(val);
+        }
         if (this.state.sideNav && (this.state.sideNav === val)) {
             this.setState({ sideNav: null })
             return
         }
         this.setState({ sideNav: val })
+    }
+    downloadSketch = e => {
+        e.preventDefault();
+        const dataUrl = this.ctx.canvas.toDataURL('image/jpeg', 1.0);
+        console.log(dataUrl)
     }
     colorCard = () => (
         <SideNavCard>
@@ -193,7 +253,7 @@ class Canvas extends React.Component {
             <p>brush size: 1 - 50</p>
             <input type="range" min="1" max="50"
                 value={this.state.lineWidth} onChange={e => this.setState({ lineWidth: e.target.value })}
-                class="slider" id="myRange"></input>
+                className="slider" id="myRange"></input>
         </SideNavCard>
     )
     eraserCard = () => (
@@ -201,32 +261,32 @@ class Canvas extends React.Component {
             <p>Eraser Size</p>
             <p>{this.state.lineWidth}</p>
             <div className="EraserSizes">
-                <div onClick={() => this.setState({ lineWidth: 5, lineColor: '#ffffff' })} className="EraserSize">
+                <div onClick={() => this.setState({ lineWidth: 5 })} className="EraserSize">
                     <p>5px</p>
                     <div style={{ width: 5, height: 5, border: '1px solid black' }}
                     ></div>
                 </div>
-                <div onClick={() => this.setState({ lineWidth: 10, lineColor: '#ffffff' })} className="EraserSize">
+                <div onClick={() => this.setState({ lineWidth: 10 })} className="EraserSize">
                     <p>10px</p>
                     <div style={{ width: 10, height: 10, border: '1px solid black' }}
                     ></div>
                 </div>
-                <div onClick={() => this.setState({ lineWidth: 20, lineColor: '#ffffff' })} className="EraserSize">
+                <div onClick={() => this.setState({ lineWidth: 20 })} className="EraserSize">
                     <p>20px</p>
                     <div style={{ width: 20, height: 20, border: '1px solid black' }}
                     ></div>
                 </div>
-                <div onClick={() => this.setState({ lineWidth: 30, lineColor: '#ffffff' })} className="EraserSize">
+                <div onClick={() => this.setState({ lineWidth: 30 })} className="EraserSize">
                     <p>30px</p>
                     <div style={{ width: 30, height: 30, border: '1px solid black' }}
                     ></div>
                 </div>
-                <div onClick={() => this.setState({ lineWidth: 40, lineColor: '#ffffff' })} className="EraserSize">
+                <div onClick={() => this.setState({ lineWidth: 40 })} className="EraserSize">
                     <p>40px</p>
                     <div style={{ width: 40, height: 40, border: '1px solid black' }}
                     ></div>
                 </div>
-                <div onClick={() => this.setState({ lineWidth: 50, lineColor: '#ffffff' })} className="EraserSize">
+                <div onClick={() => this.setState({ lineWidth: 50 })} className="EraserSize">
                     <p>50px</p>
                     <div style={{ width: 50, height: 50, border: '1px solid black' }}
                     ></div>
@@ -235,7 +295,7 @@ class Canvas extends React.Component {
             <p>Eraser size: 1 - 50</p>
             <input type="range" min="1" max="50"
                 value={this.state.lineWidth} onChange={e => this.setState({ lineWidth: e.target.value })}
-                class="slider" id="myRange"></input>
+                className="slider" id="myRange"></input>
         </SideNavCard>
     )
     render() {
@@ -254,33 +314,37 @@ class Canvas extends React.Component {
                                 background: '#212121',
                                 color: '#fff'
                             } : null}
-                            onClick={() => this.toggleSideNav('color')} ></i>
+                            onClick={() => this.toggleSideNav('color', false)} ></i>
                         {this.state.sideNav === 'color' && this.colorCard()}
                         <i className="fas fa-pencil-alt"
-                            style={this.state.sideNav === 'size' ? {
+                            style={this.state.sideNav === 'draw' ? {
                                 background: '#212121',
                                 color: '#fff'
                             } : null}
-                            onClick={() => this.toggleSideNav('size')} ></i>
-                        {this.state.sideNav === 'size' && this.brushCard()}
+                            onClick={() => this.toggleSideNav('draw')} ></i>
+                        {this.state.sideNav === 'draw' && this.brushCard()}
                         <i className="fas fa-eraser"
-                            style={this.state.sideNav === 'eraser' ? {
+                            style={this.state.sideNav === 'erase' ? {
                                 background: '#212121',
                                 color: '#fff'
                             } : null}
-                            onClick={() => this.toggleSideNav('eraser')} ></i>
-                        {this.state.sideNav === 'eraser' && this.eraserCard()}
-                        {this.state.ctx ?
-                            <a href={this.state.ctx.canvas.toDataURL('image/jpeg', 1.0)}
-                                style={{ fontSize: '2em', color: '#000' }}
-                                download="bello-sketch.jpg" ><i className="fas fa-save"></i></a>
-                            : null}
+                            onClick={() => this.toggleSideNav('erase')} ></i>
+                        {this.state.sideNav === 'erase' && this.eraserCard()}
+                        <a onClick={this.downloadSketch}
+                            style={{ fontSize: '2em', color: '#000' }}
+                            download="bello-sketch.jpg" ><i className="fas fa-save"></i></a>
                     </div>
                     <canvas
-                        onMouseMove={this.drawStart}
+                        onMouseMove={e => {
+                            e.persist();
+                            this.handleThrottle(e)
+                        }}
                         onMouseDown={this.mouseDown}
                         onMouseUp={this.dropEnd}
-                        onTouchMove={this.drawStart}
+                        onTouchMove={e => {
+                            e.persist();
+                            this.handleThrottle(e)
+                        }}
                         onTouchStart={this.mouseDown}
                         onTouchEnd={this.dropEnd}
                         ref={this.canvas} style={{ display: 'flex' }} width={window.innerWidth - 65} height={window.innerHeight - 60} />
