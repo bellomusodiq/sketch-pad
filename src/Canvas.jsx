@@ -307,32 +307,32 @@ class Canvas extends React.Component {
                 </div>
                 <div className="SketchPad">
                     <div className="ToolBar">
-                        <i className="fas fa-undo" onClick={this.undoCanvas}></i>
-                        <i className="fas fa-redo" onClick={this.redoCanvas} ></i>
+                        <i className="fas fa-undo" onClick={this.undoCanvas}>U</i>
+                        <i className="fas fa-redo" onClick={this.redoCanvas} >R</i>
                         <i className="fas fa-palette"
                             style={this.state.sideNav === 'color' ? {
                                 background: '#212121',
                                 color: '#fff'
                             } : null}
-                            onClick={() => this.toggleSideNav('color', false)} ></i>
+                            onClick={() => this.toggleSideNav('color', false)} >C</i>
                         {this.state.sideNav === 'color' && this.colorCard()}
                         <i className="fas fa-pencil-alt"
                             style={this.state.sideNav === 'draw' ? {
                                 background: '#212121',
                                 color: '#fff'
                             } : null}
-                            onClick={() => this.toggleSideNav('draw')} ></i>
+                            onClick={() => this.toggleSideNav('draw')} >D</i>
                         {this.state.sideNav === 'draw' && this.brushCard()}
                         <i className="fas fa-eraser"
                             style={this.state.sideNav === 'erase' ? {
                                 background: '#212121',
                                 color: '#fff'
                             } : null}
-                            onClick={() => this.toggleSideNav('erase')} ></i>
+                            onClick={() => this.toggleSideNav('erase')} >E</i>
                         {this.state.sideNav === 'erase' && this.eraserCard()}
                         <a onClick={this.downloadSketch}
                             style={{ fontSize: '2em', color: '#000' }}
-                            download="bello-sketch.jpg" ><i className="fas fa-save"></i></a>
+                            download="bello-sketch.jpg" ><i className="fas fa-save">S</i></a>
                     </div>
                     <canvas
                         onMouseMove={e => {
